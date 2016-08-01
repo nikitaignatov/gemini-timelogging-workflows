@@ -15,15 +15,41 @@ Extras\Developer Samples\Gemini_API\Assemblies
 #r @"..\lib\Countersoft.Gemini.Commons.dll"
 #r @"..\lib\RestSharp.dll"
 // load the Gemini script
+#load "Types.fs"
 #load "Gemini.fs"
 
 open Countersoft.Gemini.Commons.Dto
 open TimeLogger.Gemini
+open Types
 
 // setup the service manager with your credentials
 let svc = service "https://localhost" "user" "apikey"
 let cmd = Commands.init svc
 // helper method for extracting id and name of the project
+// the following example is a special flow for the case where you have a story and you add new tasks to it.
+// creates an issue adds time and closes the issue.
+let submit_close x = Parent x |> cmd.submit_closed_issue
+// define some fixed stories for the sprint
+let consulting = submit_close 2
+let testing = submit_close 4
+let deployment = submit_close 8
+let meetings = submit_close 16
+// custom fields 
+let external_support_Q3 = 128, "support Q3"
+let external_support_Q4 = 128, "support Q4"
+
+// just plain timelogging.
+cmd.log_time (Issue 16) (Hours 0) (Minutes 30) "2016-08-01 15:30" (Entry "Meeting with PM and customer")
+
+// with new closed ticket
+let issue = consulting (Hours 0) (Minutes 30) "2016-08-01 12:15" (Entry """Investingations some issues in database """)
+
+// id of the new ticket
+issue.Id
+// add custom field to the ticket
+cmd.add_custom_field (Issue issue.Id) external_support_Q3
+
+// playground 
 let view (x : ProjectDto) = x.Entity.Id, x.Entity.Name
 
 // print list of the projects available
@@ -31,10 +57,9 @@ svc.Projects.GetProjects()
 |> Seq.map view
 |> Seq.iter (printfn "%A")
 
-let my_project = 19
+let my_project = Project 19
 // create new story
-let tasks_story = cmd.submit_issue my_project "important tasks"
+let tasks_story = cmd.submit_issue my_project (Entry "important tasks")
+let p = svc.CustomFields.Get 61
 
-// the following example is a special flow for the case where you have a story and you add new tasks to it.
-// creates an issue adds time and closes the issue.
-cmd.submit_closed_issue tasks_story.Id 0 15 "2016-01-01" "make some coffee"
+p.Entity
