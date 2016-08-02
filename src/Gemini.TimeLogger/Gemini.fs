@@ -50,7 +50,6 @@ module Gemini =
                 IssueId = id.Value, 
                 UserId = user_id.Value, 
                 Comment = message.Value))
-    
     module private Get = 
         let user (svc : Service) = svc.Item.WhoAmI()
         
@@ -69,12 +68,17 @@ module Gemini =
             let project_id, _ = Get.issue svc id
             svc.Item.IssueCommentCreate(Create.comment id user_id message) |> ignore
             Create.time_entry id project_id user_id message hours minutes date |> entry svc
-
+        
+        let create_comment (svc : Service) id message = 
+            let user_id = Get.user(svc).Entity.Id |> User
+            let project_id, _ = Get.issue svc id
+            svc.Item.IssueCommentCreate(Create.comment id user_id message)
+        
         let sub_issue (svc : Service) (parent_id : parent_id) message = 
             let project_id, _ = Get.issue svc (Issue parent_id.Value)
             Create.issue (NULL parent_id.Value) project_id message |> submit_issue svc
-
-        let close_issue (svc : Service) (id : issue_id)= 
+        
+        let close_issue (svc : Service) (id : issue_id) = 
             let _, data = Get.issue svc id
             data.Entity.StatusId <- Const.Closed
             svc.Item.Update data.Entity
@@ -93,11 +97,13 @@ module Gemini =
               submit_issue : project_id -> entry -> IssueDto
               submit_sub_issue : parent_id -> entry -> IssueDto
               close_issue : issue_id -> IssueDto
+              create_comment : issue_id -> entry -> IssueCommentDto
               log_time : issue_id -> hours -> minutes -> string -> entry -> IssueTimeTrackingDto }
         
         let init (svc : Service) = 
             { submit_sub_issue = Submit.sub_issue svc
               submit_issue = Submit.issue_new svc
               close_issue = Submit.close_issue svc
+              create_comment = Submit.create_comment svc
               log_time = Submit.log_time svc
               add_custom_field = Submit.add_custom_field svc }

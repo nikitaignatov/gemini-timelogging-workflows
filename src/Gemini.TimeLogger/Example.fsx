@@ -33,13 +33,14 @@ let submit_and_close x hours minutes date entry =
     let m = cmd.submit_sub_issue (Parent x) entry
     let id = Issue m.Id
     cmd.log_time id hours minutes date entry |> ignore
+    cmd.create_comment id entry |> ignore
     cmd.close_issue id
 
 // define some fixed stories for the sprint
-let consulting = submit_and_close 2
-let testing = submit_and_close 4
-let deployment = submit_and_close 8
-let meetings = submit_and_close 16
+let consulting = submit_and_close 1024
+let testing = submit_and_close 2048
+let deployment = submit_and_close 512
+let meetings = submit_and_close 1023
 // custom fields 
 let external_support_Q3 = 128, "support Q3"
 let external_support_Q4 = 128, "support Q4"
@@ -54,6 +55,16 @@ let issue = consulting (Hours 0) (Minutes 30) "2016-08-01 12:15" (Entry """Inves
 issue.Id
 // add custom field to the ticket
 cmd.add_custom_field (Issue issue.Id) external_support_Q3
+
+// examples
+
+// if you have 30 min meeting that occurs frequently or daily scrum
+let status date summary = meetings (Hours 0) (Minutes 30) date (Entry summary)
+let daily_scrum date summary = meetings (Hours 0) (Minutes 15) date (Entry (sprintf "DAILY SCRUM summary: %s" summary))
+
+// they you can execute the commands as follows
+daily_scrum "2016-08-01 12:15" "was working on the new feature, plan to continue today."
+
 
 // playground 
 let view (x : ProjectDto) = x.Entity.Id, x.Entity.Name
