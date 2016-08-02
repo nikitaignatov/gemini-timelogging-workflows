@@ -18,12 +18,17 @@ let cmd = Commands.init svc
 // helper method for extracting id and name of the project
 // the following example is a special flow for the case where you have a story and you add new tasks to it.
 // creates an issue adds time and closes the issue.
-let submit_close x = Parent x |> cmd.submit_closed_issue
+let submit_and_close x hours minutes date entry = 
+    let m = cmd.submit_sub_issue (Parent x) entry
+    let id = Issue m.Id
+    cmd.log_time id hours minutes date entry |> ignore
+    cmd.close_issue id
+
 // define some fixed stories for the sprint
-let consulting = submit_close 2
-let testing = submit_close 4
-let deployment = submit_close 8
-let meetings = submit_close 16
+let consulting = submit_and_close 2
+let testing = submit_and_close 4
+let deployment = submit_and_close 8
+let meetings = submit_and_close 16
 // custom fields 
 let external_support_Q3 = 128, "support Q3"
 let external_support_Q4 = 128, "support Q4"
